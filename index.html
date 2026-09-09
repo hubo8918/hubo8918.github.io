@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>calsync — one-way iCloud → Google Calendar sync</title>
+<meta name="description" content="calsync is a self-hosted tool that mirrors one Apple iCloud calendar into a Google Calendar, strictly one-way.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>calsync</h1>
+  <p class="tagline">A self-hosted tool that mirrors one Apple iCloud calendar into a Google Calendar — strictly one-way.</p>
+  <nav>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+    <a href="https://github.com/hubo8918/calsync">Source code</a>
+  </nav>
+</header>
+
+<h2>What it does</h2>
+<p>
+  calsync reads events from a single Apple iCloud calendar over CalDAV and writes a mirror
+  of them into a Google Calendar you own. iCloud is the source of truth; the Google calendar
+  is a read-only reflection of it. You run calsync yourself — on your own machine, server, or
+  container — using your own Google OAuth client credentials.
+</p>
+
+<h2>One-way by design</h2>
+<ul>
+  <li>The CalDAV client only issues read operations. There is no code path that writes to iCloud.</li>
+  <li>Attendees and organizers are never copied to Google, so Google never emails invitations or RSVPs on your behalf.</li>
+  <li>Google-side writes only ever touch events that calsync itself created, tracked in a local state file and tagged with a private marker.</li>
+  <li>A run that would delete most of the mirror at once is refused unless you explicitly confirm it.</li>
+</ul>
+
+<h2>How it works</h2>
+<ul>
+  <li><strong>Incremental.</strong> Each run stores a CalDAV sync token, so subsequent runs ask iCloud only for what changed.</li>
+  <li><strong>Recurring events.</strong> RRULE / RDATE / EXDATE rules pass through to Google natively instead of being flattened into copies.</li>
+  <li><strong>Timezone-aware.</strong> IANA timezones map 1:1; floating times use a configured default timezone.</li>
+  <li><strong>Self-healing.</strong> If the sync token expires or local state is lost, calsync falls back to a full reconcile and only pushes real differences.</li>
+</ul>
+
+<h2>Google Calendar access</h2>
+<p>
+  calsync requests the <code>https://www.googleapis.com/auth/calendar</code> scope. It needs this
+  scope because it both manages events in the destination calendar and reads and, when missing,
+  subscribes to that calendar's entry in your calendar list in order to verify the calendar exists
+  and that you have write access to it before any sync begins.
+</p>
+<p>
+  Authorization happens directly between you and Google. The resulting OAuth token is stored on the
+  machine where you run calsync and is never transmitted anywhere else. See the
+  <a href="privacy.html">Privacy Policy</a> for details, including how to revoke access.
+</p>
+
+<h2>Running it</h2>
+<pre><code>git clone https://github.com/hubo8918/calsync.git
+cd calsync
+cp .env.example .env   # fill in your iCloud and Google settings
+docker compose up</code></pre>
+<p>Full setup instructions are in the <a href="https://github.com/hubo8918/calsync#readme">project README</a>.</p>
+
+<footer>
+  <a href="privacy.html">Privacy Policy</a>
+  <a href="terms.html">Terms of Service</a>
+  <a href="https://github.com/hubo8918/calsync">GitHub</a>
+  <p>Contact: <a href="mailto:hubo8918@gmail.com">hubo8918@gmail.com</a></p>
+</footer>
+
+</body>
+</html>
